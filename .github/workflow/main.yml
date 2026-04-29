@@ -1,0 +1,54 @@
+name: Java CI/CD Hospital
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Permisos de ejecución
+        run: chmod +x mvnw
+
+      - name: Compilar Proyecto
+        run: ./mvnw compile --no-transfer-progress
+
+      - name: Ejecutar Tests de Integración
+        run: ./mvnw verify --no-transfer-progress
+
+      - name: Generar Informe de Resultados
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Reporte de Pruebas JUnit
+          path: '**/target/surefire-reports/*.xml'
+          reporter: java-junit
+
+      - name: Generar Badge de Cobertura (Jacoco)
+        uses: cicirello/jacoco-badge-generator@v2
+        with:
+          generate-branches-badge: true
+          jacoco-csv-file: target/site/jacoco/jacoco.csv
+          badges-directory: .github/badges
+
+      - name: Commit de los Badges
+        if: github.event_name == 'push'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .github/badges/*.svg
+          git commit -m "Update badges" || exit 0
+          git push
