@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: hospital-container
-        image: alonsom0/practica-hospital:latest # Cambia esto
+        image: alonsom0/practica-hospital:latest
         ports:
         - containerPort: 8080
 ---
