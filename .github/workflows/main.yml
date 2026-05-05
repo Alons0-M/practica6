@@ -63,6 +63,7 @@ jobs:
         with:
           name: hospital-jar
           path: target/*.jar
+          retention-days: 1  # Evita acumular basura
 
   build-docker-and-deploy:
     needs: build-and-test
