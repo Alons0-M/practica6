@@ -14,9 +14,9 @@ jobs:
     - name: Dar permisos de ejecución #no está
       run: chmod +x mvnw
     - name: Build with Maven
-      run: mvnw compile -B
+      run: mvnw compile --batch-mode
     - name: Run tests
-      run: mvnw verify -B #usar verify para integracion, test solo unitarias
+      run: mvnw verify ---batch-mode #usar verify para integracion, test solo unitarias
     - name: Generate reports #neesario?
       run: mvnw jacoco:report
 
@@ -26,6 +26,15 @@ jobs:
       with:
         name: jacoco-report
         path: target/site/jacoco #surefire-reports/
+
+    - name: Reporte de tests en GitHub
+      uses: dorny/test-reporter@v1
+      if: always() # Es vital poner always() para ver qué test falló
+      with:
+        name: Resultados Pruebas de Integración
+        path: 'target/failsafe-reports/*.xml, target/surefire-reports/*.xml'
+        reporter: java-junit
+
     - name: Upload JAR artifact
       if: success()
       uses: actions/upload-artifact@v4
