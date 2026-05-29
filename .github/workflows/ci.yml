@@ -1,33 +1,42 @@
-name: CI Pipeline
-on: [push, pull_request]
+name: Java CI/CD Hospital
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+  checks: write
+  id-token: write
+
 jobs:
-  build:
+  # 1. FASE DE COMPILACIÓN
+  compile:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: maven
-    - name: Dar permisos de ejecución #no está
-      run: chmod +x mvnw
-    - name: Build with Maven
-      run: mvnw compile --batch-mode
-    - name: Run tests
-      run: mvnw verify ---batch-mode #usar verify para integracion, test solo unitarias
-    - name: Generate reports #neesario?
-      run: mvnw jacoco:report
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: '21', cache: 'maven' }
+      - run: chmod +x mvnw
+      # Compilamos según el enunciado
+      - run: ./mvnw compile --no-transfer-progress
 
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: jacoco-report
-        path: target/site/jacoco #surefire-reports/
+  # 2. FASE DE TESTEO
+  test:
+    needs: compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: '21', cache: 'maven' }
+      - run: chmod +x mvnw
+      # Ejecutamos las pruebas de integración
+      - run: ./mvnw verify --no-transfer-progress
 
-    - name: Generar Informe de Resultados
+      # Generamos el reporte visual en GitHub
+      - name: Generar Informe de Resultados
         uses: dorny/test-reporter@v1
         if: always()
         with:
@@ -35,9 +44,28 @@ jobs:
           path: 'target/*-reports/*.xml'
           reporter: java-junit
 
-    - name: Upload JAR artifact
-      if: success()
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-jar
-        path: target/*.jar
+      # Guardamos el resultado de JaCoCo como artefacto
+      - name: Artefacto de Cobertura Jacoco
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+
+  # 3. FASE DE EMPAQUETADO
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: '21', cache: 'maven' }
+      - run: chmod +x mvnw
+      - run: ./mvnw -B clean package -DskipTests
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: hospital-jar
+          path: target/*.jar
+          retention-days: 1
