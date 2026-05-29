@@ -27,13 +27,13 @@ jobs:
         name: jacoco-report
         path: target/site/jacoco #surefire-reports/
 
-    - name: Reporte de tests en GitHub
-      uses: dorny/test-reporter@v1
-      if: always() # Es vital poner always() para ver qué test falló
-      with:
-        name: Resultados Pruebas de Integración
-        path: 'target/failsafe-reports/*.xml, target/surefire-reports/*.xml'
-        reporter: java-junit
+    - name: Generar Informe de Resultados
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Reporte de Pruebas JUnit
+          path: 'target/*-reports/*.xml'
+          reporter: java-junit
 
     - name: Upload JAR artifact
       if: success()
