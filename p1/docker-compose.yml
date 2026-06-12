@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  web:
+    image: webapp:latest
+    environment:
+      - APP_ENV=development
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - appnet
+
+  proxy:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - web
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    driver: bridge
